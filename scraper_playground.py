@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 from selenium import webdriver
 import unicodedata
+import time
 
 #-----------------------------------------------------------------------
 
@@ -108,6 +109,11 @@ for (player,stats) in zip(away_skaters_players,away_skaters_stats):
 			dictionary['teams'][away_team]['players'][player][str(header)] = 60. * float(str(stats[i-1]).split(':')[0]) + float(str(stats[i-1]).split(':')[1])
 		elif not str(stats[i-1]):
 			dictionary['teams'][away_team]['players'][player][str(header)] = np.nan
+		elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH':
+			if i >= 6 and i <=8:
+				dictionary['teams'][away_team]['players'][player]['G'+str(header)] = float(stats[i-1])
+			elif i >= 10 and i <= 12:
+				dictionary['teams'][away_team]['players'][player]['A'+str(header)] = float(stats[i-1])
 		else:
 			dictionary['teams'][away_team]['players'][player][str(header)] = float(stats[i-1])
 
@@ -153,6 +159,11 @@ for (player,stats) in zip(home_skaters_players,home_skaters_stats):
 			dictionary['teams'][home_team]['players'][player][str(header)] = 60. * float(str(stats[i-1]).split(':')[0]) + float(str(stats[i-1]).split(':')[1])
 		elif not str(stats[i-1]):
 			dictionary['teams'][home_team]['players'][player][str(header)] = np.nan
+		elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH':
+			if i >= 6 and i <=8:
+				dictionary['teams'][home_team]['players'][player]['G'+str(header)] = float(stats[i-1])
+			elif i >= 10 and i <= 12:
+				dictionary['teams'][home_team]['players'][player]['A'+str(header)] = float(stats[i-1])		
 		else:
 			dictionary['teams'][home_team]['players'][player][str(header)] = float(stats[i-1])
 
@@ -206,8 +217,6 @@ elif home_dec == 'O':
 dictionary['teams'][home_team]['record before']	= home_record_after
 dictionary['teams'][home_team]['result'] = home_dec
 
-#fix degeneracy between goals and assists
-
 #-----------------------------------------------------------------------
 
 #NHL.com box scores
@@ -221,8 +230,8 @@ driver.get("https://www.nhl.com/gamecenter/%s-vs-%s/%s/%s/%s/%s#game=%s,game_sta
 soup = BeautifulSoup(driver.page_source)
 
 team_table = soup.find("div",attrs={"class":"statistics__season-stats"})
-nhl_team_headers = team_table.find("thead").find("tr").get_text().strip().split()
-nhl_team_stats = [row.get_text().split() for row in team_table.find("tbody").find_all("tr")]
+nhl_team_headers = [element.get_text().strip() for element in team_table.find("thead").find("tr").find_all("th")]
+nhl_team_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in team_table.find("tbody").find_all("tr")]
 away_nhl_team_stats = nhl_team_stats[0]
 home_nhl_team_stats = nhl_team_stats[1]
 
@@ -250,8 +259,20 @@ for home_table in home_tables:
 
 #Update dictionary
 
-#get team stats
-
+###
+for i,header in enumerate(nhl_team_headers):
+	if i == 0:
+		pass
+	elif str(header) == 'FO%':
+		dictionary['teams'][away_team][str(header)] = float(str(away_nhl_team_stats[i]).split('%')[0])/100.
+		dictionary['teams'][home_team][str(header)] = float(str(home_nhl_team_stats[i]).split('%')[0])/100.
+	elif str(header) == 'PP':
+		dictionary['teams'][away_team][str(header)] = [float(j) for j in str(away_nhl_team_stats[i]).split('/')]
+		dictionary['teams'][home_team][str(header)] = [float(j) for j in str(home_nhl_team_stats[i]).split('/')]
+	else:
+		dictionary['teams'][away_team][str(header)] = float(away_nhl_team_stats[i])
+		dictionary['teams'][home_team][str(header)] = float(home_nhl_team_stats[i])
+		
 ###
 for player,headers,stats in zip(away_nhl_players,away_nhl_headers,away_nhl_stats):
 	for player_link in dictionary['teams'][away_team]['players']:
@@ -269,6 +290,8 @@ for player,headers,stats in zip(away_nhl_players,away_nhl_headers,away_nhl_stats
 					dictionary['teams'][away_team]['players'][player_link]['SV ' + str(header)] = [float(j) for j in str(stats[i]).split('-')]
 				elif str(header) == 'SAVE-SHOTS':
 					pass
+				elif str(header) == 'FO%':
+					dictionary['teams'][away_team]['players'][player_link][str(header)] = float(stats[i])/100.
 				else:
 					dictionary['teams'][away_team]['players'][player_link][str(header)] = float(stats[i])
 			break
@@ -290,6 +313,8 @@ for player,headers,stats in zip(home_nhl_players,home_nhl_headers,home_nhl_stats
 					dictionary['teams'][home_team]['players'][player_link]['SV ' + str(header)] = [float(j) for j in str(stats[i]).split('-')]
 				elif str(header) == 'SAVE-SHOTS':
 					pass
+				elif str(header) == 'FO%':
+					dictionary['teams'][home_team]['players'][player_link][str(header)] = float(stats[i])/100.
 				else:
 					dictionary['teams'][home_team]['players'][player_link][str(header)] = float(stats[i])
 			break
@@ -319,8 +344,8 @@ for line in team_lines:
 			else:
 				i_team += 1
 				
-away_moneylines = moneylines[0]	
-home_moneylines = moneylines[1]
+away_moneyline = moneylines[0]	
+home_moneyline = moneylines[1]
 
 driver.get('http://www.sportsbookreview.com/betting-odds/nhl-hockey/totals/?date=%s%s%s'%(year,month,day))
 soup = BeautifulSoup(driver.page_source)		
@@ -332,6 +357,13 @@ total_line_over = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%gam
 total_line_under = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-u-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
 
 #Update dictionary
+dictionary['teams'][away_team]['team money line'] = float(away_moneyline)
+dictionary['teams'][home_team]['team money line'] = float(home_moneyline)
+
+dictionary['O/U'] = {}
+dictionary['O/U']['O/U line'] = float(total_number)
+dictionary['O/U']['O money line'] = float(total_line_over)
+dictionary['O/U']['U money line'] = float(total_line_under)
 
 #-----------------------------------------------------------------------
 
