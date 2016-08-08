@@ -45,5 +45,4 @@ schedule_home_teams = [str(element['csk'].strip()).split('.')[0] for element in 
 
 #-----------------------------------------------------------------------
 
-print day_number_to_date(int(year),4)
-print date_to_day_number(int(year),2016,7,5)
+print schedule_home_teams
