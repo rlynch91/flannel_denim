@@ -5,6 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import time
 import scipy.optimize as scipy_optimize
+import scipy.ndimage.interpolation as ndimage_interp
 
 ########################################################################
 
@@ -134,7 +135,120 @@ def calculate_predict_dist(bandwidths,data_values,data_coords,predict_coords):
 		predict_stds[i] = np.sqrt(K_predict_predict[i,i] - tmp_std)
 	
 	return predict_means, predict_stds
+
+###
+def grid_interpolation_linear(known_coords, known_values, interp_coords):
+	"""
+	Interpolate between known values on a regular grid of coordinates
+	*known_coords is array of shape \product(ith grid length) x (# of dimensions)
+	*known_values is array of shape \product(ith grid length)
+	*interp_coords is array of shape (# of events) x (# of dimensions)
+	"""
+	#known_coords is array of shape \product(ith grid length) x (# of dimensions), use to find mapping between coords and grid indices
+	ndim = np.shape(known_coords)[-1]
+	grid_lens = np.array(np.shape(known_coords)[:-1])
 	
+	grid_starts = np.zeros(ndim)
+	grid_factors = np.zeros(ndim)
+	for dim in xrange(ndim):
+		#Find min and max of grid coordinates for each dimension and use these to construct mapping to grid indices
+		ind_min = np.zeros(ndim+1,dtype='int')
+		ind_min[-1] = dim
+		
+		ind_max = np.zeros(ndim+1,dtype='int')
+		ind_max[dim] = -1
+		ind_max[-1] = dim
+		
+		grid_starts[dim] = known_coords[tuple(ind_min)]
+		grid_factors[dim] = (known_coords[tuple(ind_max)] - known_coords[tuple(ind_min)]) / float(grid_lens[dim] - 1.)
+	
+	#known_values is array of shape \product(ith grid length), values map fine to grid indices as is
+	grid_known_values = known_values
+	
+	#interp_coords is array of shape (# of events) x (# of dimensions), need to map into grid indices and then take transpose
+	grid_interp_coords = np.transpose( (interp_coords - grid_starts) / grid_factors )
+	
+	#With everything mapped to grid indices, we can now interpolate between "pixels"
+	return ndimage_interp.map_coordinates(input=grid_known_values, coordinates=grid_interp_coords, output=float, order=1, mode='nearest')	
+
+###
+def Gaussian_KDE_smoothing(n_params,KDE_ranges,bandwidths,data,grid_points):
+	"""
+	Perform Gaussian KDE smoothing in specificied number of dimensions (ndim = n_params)
+	"""
+		
+	#Initialize grid over which to do KDE binning
+	grid_values = [None]*n_params
+	for i in xrange(n_params):
+		grid_values[i] = np.linspace(start=KDE_ranges[i,0], stop=KDE_ranges[i,1], num=grid_points[i])
+	
+	if n_params == 1:
+		location_kde = np.transpose(np.array(grid_values))
+	else:
+		location_kde = np.array(np.meshgrid(*grid_values,indexing='ij'))
+		location_kde = np.rollaxis(location_kde, 0, (n_params + 1))
+	
+	grid_shape = ()
+	for i in xrange(n_params):
+		grid_shape += (grid_points[i],)
+	log_height_kde = np.zeros(grid_shape)
+	
+	#Calculate height contribution of each data point over the grid
+	log_height_kde += -np.log10(np.product(bandwidths) * (2.*np.pi)**(n_params/2.) * float(len(data)))
+	for i in xrange(len(data)):
+		if i == 0:
+			A =  -0.5 * np.log10(np.e) * np.sum( ((data[i,:] - location_kde)/bandwidths)**2., axis=-1)
+			log_height_kde += A
+		else:
+			B = -A - 0.5 * np.log10(np.e) * np.sum( ((data[i,:] - location_kde)/bandwidths)**2., axis=-1)
+			C = B
+			C[B <= 300.] = np.log10( 1. + 10.**(B[B <= 300.]) )
+			A += C
+			log_height_kde += C
+	
+	return location_kde, 10.**(log_height_kde)
+
+###
+def KL_function_gaussian_KDE(H, data):
+	"""
+	Calculate the function that needs to be minimized to optimize the bandwidths according to the KL criteria
+	"""
+	#Initialize stuff
+	n_data = float(len(data))
+	n_dim = float(len(H))
+	
+	#Calculate the KL function by iterating
+	KL_func = 0.
+	KL_jacob = np.zeros(len(H))
+	
+	for i in xrange(int(n_data)):
+		tmp_KL_func = np.sum( np.exp(-0.5 * np.sum( ((data[i,:] - data[:,:])/H[:])**2., axis=-1)), axis=-1) - 0.9999999999999999
+		tmp_KL_deriv = np.sum( np.transpose(((data[i,:] - data[:,:])/H[:])**2.) * np.exp(-0.5 * np.sum( ((data[i,:] - data[:,:])/H[:])**2., axis=-1)), axis=-1)
+		
+		KL_func += np.log10(tmp_KL_func)
+		KL_jacob += tmp_KL_deriv / tmp_KL_func - 1.
+		
+	KL_func /= n_data
+	KL_func -= np.log10( (n_data-1.) * np.sqrt( (2.*np.pi)**n_dim * np.prod(H[:])**2.) )
+	
+	KL_jacob /= (n_data * np.log(10.) * H[:])
+
+	return -KL_func, -KL_jacob
+
+###	
+def find_opt_gaussian_KDE_band_BFGS(data, init_coords):
+	"""
+	Calculates optimal bandwidth for a parameter group using the KL criteria and the BFGS algorithm
+	"""
+	
+	#Calculate the KL criteria function at each point on the grid, keeping track of the coordinates that yield the minimum value
+	min_object = scipy_optimize.minimize(fun=KL_function_gaussian_KDE, x0=init_coords, args=(data,), method='BFGS', jac=True)
+	
+	#Check to make sure the minimum was found successfully
+	if min_object['success'] == False:
+		raise ValueError, "Optimization of the bandwidths has failed with message: %s"%(min_object['message'])
+		
+	return min_object['x']
 
 ########################################################################
 
