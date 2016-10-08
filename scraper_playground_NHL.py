@@ -78,13 +78,13 @@ home_goalies_headers = [[element.get_text().strip() for element in row.find_all(
 home_goalies_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_goalies_table.find("tbody").find_all("tr")]
 home_goalies_players = [element.find('a')['href'] for element in home_goalies_table.find("tbody").find_all("td",attrs={"data-stat":"player"})]
 
-away_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_%s_adv"%away_team}).find("div", attrs={"class":"placeholder"}).next_element)
+away_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_%s_adv"%away_team}).find("div", attrs={"class":"placeholder"}).next_element.next_element)
 away_adv_table = away_adv_soup.find("table", attrs={"id":"%s_adv"%away_team})
 away_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_adv_table.find("thead").find_all("tr")][0]
 away_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
 away_adv_players = [row.find('a')['href'] for row in away_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
 
-home_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_%s_adv"%home_team}).find("div", attrs={"class":"placeholder"}).next_element)
+home_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_%s_adv"%home_team}).find("div", attrs={"class":"placeholder"}).next_element.next_element)
 home_adv_table = home_adv_soup.find("table", attrs={"id":"%s_adv"%home_team})
 home_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in home_adv_table.find("thead").find_all("tr")][0]
 home_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
@@ -221,12 +221,14 @@ dictionary['teams'][home_team]['result'] = home_dec
 
 #NHL.com box scores
 
-schedule_page = requests.get("https://www.nhl.com/%s/schedule/%s/ET"%(home_team_long,year+'-'+month+'-'+day))
-schedule_soup = BeautifulSoup(schedule_page.text)
-nhl_game_num = schedule_soup.find("a", attrs={"title":"Recap"})['href'].split('/')[-1]
-
 driver = webdriver.PhantomJS()
-driver.get("https://www.nhl.com/gamecenter/%s-vs-%s/%s/%s/%s/%s#game=%s,game_state=final,game_tab=boxscore"%(away_team.lower(),home_team.lower(),year,month,day,nhl_game_num,nhl_game_num))
+driver.get("https://www.nhl.com/%s/schedule/%s/ET/list"%(home_team_long,year+'-'+month+'-'+day))
+schedule_soup = BeautifulSoup(driver.page_source)
+nhl_game_num = schedule_soup.find("tbody", attrs={"style":"display: table-row-group;"}).find("a", attrs={"class":"icon-label-pair icon-label-pair-recap"})['href'].split('/')[-1]
+
+print nhl_game_num
+
+driver.get("https://www.nhl.com/gamecenter/%s-vs-%s/%s/%s/%s/%s#game=%s,game_state=final,game_tab=stats"%(away_team.lower(),home_team.lower(),year,month,day,nhl_game_num,nhl_game_num))
 soup = BeautifulSoup(driver.page_source)
 
 team_table = soup.find("div",attrs={"class":"statistics__season-stats"})
@@ -344,15 +346,18 @@ for line in team_lines:
 			else:
 				i_team += 1
 				
-away_moneyline = moneylines[0]	
-home_moneyline = moneylines[1]
+away_moneyline = str(moneylines[0])	
+home_moneyline = str(moneylines[1])
 
 driver.get('http://www.sportsbookreview.com/betting-odds/nhl-hockey/totals/?date=%s%s%s'%(year,month,day))
 soup = BeautifulSoup(driver.page_source)		
 
-total_number = 0.
-for i in soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"adjust"}).get_text():
-	total_number += unicodedata.numeric(i)
+total_number = ''
+for char in soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"adjust"}).get_text():
+	try:
+		total_number += str(char)
+	except UnicodeEncodeError:
+		total_number += str(unicodedata.numeric(char)).strip('0')
 total_line_over = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
 total_line_under = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-u-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
 
@@ -364,6 +369,10 @@ dictionary['O/U'] = {}
 dictionary['O/U']['O/U line'] = float(total_number)
 dictionary['O/U']['O money line'] = float(total_line_over)
 dictionary['O/U']['U money line'] = float(total_line_under)
+
+print dictionary['teams'][away_team]['team money line']
+print dictionary['teams'][home_team]['team money line']
+print dictionary['O/U']
 
 #-----------------------------------------------------------------------
 
