@@ -39,49 +39,56 @@ dictionary['teams'][home_team]['location'] = 'home'
 
 #Basketball-reference.com box scores
 
-page = requests.get("http://www.basketball-reference.com/boxscores//%s0%s.html"%(year+month+day,home_team))
-soup = BeautifulSoup(page.text)
+count = 0
+while count < 10:
+	try:
+		page = requests.get("http://www.basketball-reference.com/boxscores//%s0%s.html"%(year+month+day,home_team))
+		soup = BeautifulSoup(page.text)
 
-scores = []
-streaks = []
-scorebox = soup.find("div", attrs={"class":"scorebox"})
-elements = scorebox.find_all("div")
-for i,div in enumerate(elements):
-	if div.has_attr('class'):
-		if div['class'][0] == 'score':
-			scores += [elements[i].get_text().strip()]
-			streaks += [elements[i+1].get_text().strip()]
+		scores = []
+		streaks = []
+		scorebox = soup.find("div", attrs={"class":"scorebox"})
+		elements = scorebox.find_all("div")
+		for i,div in enumerate(elements):
+			if div.has_attr('class'):
+				if div['class'][0] == 'score':
+					scores += [elements[i].get_text().strip()]
+					streaks += [elements[i+1].get_text().strip()]
 
-four_factors_soup = BeautifulSoup(soup.find("div", attrs={"id":"all_four_factors"}).find("div",attrs={"class":"placeholder"}).next_element.next_element)
-four_factors_table = four_factors_soup.find("table", attrs={"id":"four_factors"})
-four_factors_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in four_factors_table.find_all("tr",attrs={"class":"thead"})]
-four_factors_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in four_factors_table.find_all("tr")]
+		four_factors_soup = BeautifulSoup(soup.find("div", attrs={"id":"all_four_factors"}).find("div",attrs={"class":"placeholder"}).next_element.next_element)
+		four_factors_table = four_factors_soup.find("table", attrs={"id":"four_factors"})
+		four_factors_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in four_factors_table.find_all("tr",attrs={"class":"thead"})]
+		four_factors_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in four_factors_table.find_all("tr")]
 
-away_heading = soup.find("div", attrs={"id":"all_box_%s_basic"%away_team.lower()})
-away_record_after = away_heading.find('h2').get_text().strip().split()[-1]
+		away_heading = soup.find("div", attrs={"id":"all_box_%s_basic"%away_team.lower()})
+		away_record_after = away_heading.find('h2').get_text().strip().split()[-1]
 
-home_heading = soup.find("div", attrs={"id":"all_box_%s_basic"%home_team.lower()})
-home_record_after = home_heading.find('h2').get_text().strip().split()[-1]
+		home_heading = soup.find("div", attrs={"id":"all_box_%s_basic"%home_team.lower()})
+		home_record_after = home_heading.find('h2').get_text().strip().split()[-1]
 
-away_stats_table = soup.find("table", attrs={"id":"box_%s_basic"%away_team.lower()})
-away_stats_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_stats_table.find("thead").find_all("tr")][1]
-away_stats_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_stats_table.find("tbody").find_all("tr")]
-away_stats_players = [element.find('a') for element in away_stats_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
+		away_stats_table = soup.find("table", attrs={"id":"box_%s_basic"%away_team.lower()})
+		away_stats_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_stats_table.find("thead").find_all("tr")][1]
+		away_stats_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_stats_table.find("tbody").find_all("tr")]
+		away_stats_players = [element.find('a') for element in away_stats_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
 
-away_adv_table = soup.find("table", attrs={"id":"box_%s_advanced"%away_team.lower()})
-away_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_adv_table.find("thead").find_all("tr")][1]
-away_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_adv_table.find("tbody").find_all("tr")]
-away_adv_players = [element.find('a') for element in away_adv_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
+		away_adv_table = soup.find("table", attrs={"id":"box_%s_advanced"%away_team.lower()})
+		away_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_adv_table.find("thead").find_all("tr")][1]
+		away_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_adv_table.find("tbody").find_all("tr")]
+		away_adv_players = [element.find('a') for element in away_adv_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
 
-home_stats_table = soup.find("table", attrs={"id":"box_%s_basic"%home_team.lower()})
-home_stats_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in home_stats_table.find("thead").find_all("tr")][1]
-home_stats_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_stats_table.find("tbody").find_all("tr")]
-home_stats_players = [element.find('a') for element in home_stats_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
+		home_stats_table = soup.find("table", attrs={"id":"box_%s_basic"%home_team.lower()})
+		home_stats_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in home_stats_table.find("thead").find_all("tr")][1]
+		home_stats_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_stats_table.find("tbody").find_all("tr")]
+		home_stats_players = [element.find('a') for element in home_stats_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
 
-home_adv_table = soup.find("table", attrs={"id":"box_%s_advanced"%home_team.lower()})
-home_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in home_adv_table.find("thead").find_all("tr")][1]
-home_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_adv_table.find("tbody").find_all("tr")]
-home_adv_players = [element.find('a') for element in home_adv_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
+		home_adv_table = soup.find("table", attrs={"id":"box_%s_advanced"%home_team.lower()})
+		home_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in home_adv_table.find("thead").find_all("tr")][1]
+		home_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_adv_table.find("tbody").find_all("tr")]
+		home_adv_players = [element.find('a') for element in home_adv_table.find("tbody").find_all("th",attrs={"data-stat":"player"})]
+		break
+	except AttributeError:
+		print count
+		count += 1
 
 #Update dictionary
 dictionary['teams'][away_team]['points for'] = int(scores[0])
@@ -188,42 +195,61 @@ for i,header in enumerate(four_factors_headers[1]):
 
 #Sportsbookreview.com vegas odds
 
-driver = webdriver.PhantomJS()
-driver.get('http://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/?date=%s%s%s'%(year,month,day))
-soup = BeautifulSoup(driver.page_source)
-
-team_name_soup = soup.find_all("span",attrs={"class":"team-name"})
-for team in team_name_soup:
-	if team.get_text() == home_team_city:
-		game_number = team.find("a")['href'].split('-')[-1].strip('/')
-		break
-
-moneylines = []
-team_lines = soup.find_all("div", attrs={"class":"eventLine-book-value"})
-i_team = 0	
-for line in team_lines:
-	if line.has_attr('id'):
-		if line['id'].split('-')[1] == game_number and line['id'].split('-')[2] == '1096':
-			moneylines += [line.get_text()]
-			if i_team >= 1:
-				break
-			else:
-				i_team += 1
-
-away_moneyline = str(moneylines[0])
-home_moneyline = str(moneylines[1])
-
-driver.get('http://www.sportsbookreview.com/betting-odds/nba-basketball/totals/?date=%s%s%s'%(year,month,day))
-soup = BeautifulSoup(driver.page_source)		
-
-total_number = ''
-for char in soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"adjust"}).get_text():
+count = 0
+while count < 10:
 	try:
-		total_number += str(char)
-	except UnicodeEncodeError:
-		total_number += str(unicodedata.numeric(char)).strip('0')
-total_line_over = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
-total_line_under = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-u-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
+		driver = webdriver.PhantomJS()
+		driver.get('http://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/?date=%s%s%s'%(year,month,day))
+		soup = BeautifulSoup(driver.page_source)
+
+		team_name_soup = soup.find_all("span",attrs={"class":"team-name"})
+		for team in team_name_soup:
+			if team.get_text() == home_team_city:
+				game_number = team.find("a")['href'].split('-')[-1].strip('/')
+				break
+
+		moneylines = []
+		team_lines = soup.find_all("div", attrs={"class":"eventLine-book-value"})
+		i_team = 0	
+		for line in team_lines:
+			if line.has_attr('id'):
+				if line['id'].split('-')[1] == game_number and line['id'].split('-')[2] == '1096':
+					moneylines += [line.get_text()]
+					if i_team >= 1:
+						break
+					else:
+						i_team += 1
+
+		away_moneyline = str(moneylines[0])
+		home_moneyline = str(moneylines[1])
+		driver.quit()
+		break
+	except AttributeError:
+		driver.quit()
+		print count
+		count += 1
+
+count = 0
+while count < 10:
+	try:
+		driver = webdriver.PhantomJS()
+		driver.get('http://www.sportsbookreview.com/betting-odds/nba-basketball/totals/?date=%s%s%s'%(year,month,day))
+		soup = BeautifulSoup(driver.page_source)		
+
+		total_number = ''
+		for char in soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"adjust"}).get_text():
+			try:
+				total_number += str(char)
+			except UnicodeEncodeError:
+				total_number += str(unicodedata.numeric(char)).strip('0')
+		total_line_over = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-o-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
+		total_line_under = soup.find("div", attrs={"id":"eventLineOpener-%s-1096-u-3"%game_number}).find("span",attrs={"class":"price"}).get_text()
+		driver.quit()
+		break
+	except AttributeError:
+		driver.quit()
+		print count
+		count += 1
 
 #Update dictionary
 dictionary['teams'][away_team]['team money line'] = float(away_moneyline)
@@ -236,8 +262,5 @@ dictionary['O/U']['U money line'] = float(total_line_under)
 
 #-----------------------------------------------------------------------
 
-driver.quit()
-
 #test on bulls home and away to make sure home and away are the same
-#see if we need to put driver.get in loops to make fail-safe
 

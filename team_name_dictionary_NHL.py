@@ -155,3 +155,33 @@ dictionary['STL'] = {}
 dictionary['STL']['team'] = 'STL'
 dictionary['STL']['team long'] = 'blues'
 dictionary['STL']['team city'] = 'St. Louis'
+
+#Tampa Bay
+dictionary['TBL'] = {}
+dictionary['TBL']['team'] = 'TBL'
+dictionary['TBL']['team long'] = 'lightning'
+dictionary['TBL']['team city'] = 'Tampa Bay'
+
+#Toronto
+dictionary['TOR'] = {}
+dictionary['TOR']['team'] = 'TOR'
+dictionary['TOR']['team long'] = 'mapleleafs'
+dictionary['TOR']['team city'] = 'Toronto'
+
+#Vancouver
+dictionary['VAN'] = {}
+dictionary['VAN']['team'] = 'VAN'
+dictionary['VAN']['team long'] = 'canucks'
+dictionary['VAN']['team city'] = 'Vancouver'
+
+#Washington
+dictionary['WSH'] = {}
+dictionary['WSH']['team'] = 'WSH'
+dictionary['WSH']['team long'] = 'capitals'
+dictionary['WSH']['team city'] = 'Washington'
+
+#Winnipeg
+dictionary['WPG'] = {}
+dictionary['WPG']['team'] = 'WPG'
+dictionary['WPG']['team long'] = 'jets'
+dictionary['WPG']['team city'] = 'Winnipeg'
