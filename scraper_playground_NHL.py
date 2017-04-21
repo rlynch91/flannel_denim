@@ -46,20 +46,26 @@ while count < 10:
 		soup = BeautifulSoup(page.text)
 
 		scores = []
-		streaks = []
+		records_after = []
 		scorebox = soup.find("div", attrs={"class":"scorebox"})
 		elements = scorebox.find_all("div")
 		for i,div in enumerate(elements):
 			if div.has_attr('class'):
 				if div['class'][0] == 'score':
 					scores += [elements[i].get_text().strip()]
-					streaks += [elements[i+1].get_text().strip()]
+					records_after += [elements[i+1].get_text().strip()]
 
+		"""
 		away_heading = soup.find("div", attrs={"id":"all_%s_skaters"%away_team})
 		away_record_after = away_heading.find('h2').get_text().strip().split()[-1]
 
 		home_heading = soup.find("div", attrs={"id":"all_%s_skaters"%home_team})
 		home_record_after = home_heading.find('h2').get_text().strip().split()[-1]
+
+		print home_record_after
+		print scores
+		print streaks
+		"""
 
 		away_skaters_table = soup.find("table", attrs={"id":"%s_skaters"%away_team})
 		away_skaters_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_skaters_table.find("thead").find_all("tr")][1]
@@ -81,17 +87,17 @@ while count < 10:
 		home_goalies_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_goalies_table.find("tbody").find_all("tr")]
 		home_goalies_players = [element.find('a')['href'] for element in home_goalies_table.find("tbody").find_all("td",attrs={"data-stat":"player"})]
 
-		away_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_%s_adv"%away_team}).find("div", attrs={"class":"placeholder"}).next_element.next_element)
+		away_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_advanced"}).find("div", attrs={"class":"placeholder"}).next_element.next_element)
 		away_adv_table = away_adv_soup.find("table", attrs={"id":"%s_adv"%away_team})
 		away_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in away_adv_table.find("thead").find_all("tr")][0]
-		away_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
-		away_adv_players = [row.find('a')['href'] for row in away_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
+		away_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in away_adv_table.find("tbody").find_all("tr",attrs={"class":"ALLAll"})]
+		away_adv_players = [row.find('a')['href'] for row in away_adv_table.find("tbody").find_all("tr",attrs={"class":"ALLAll"})]
 
-		home_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_%s_adv"%home_team}).find("div", attrs={"class":"placeholder"}).next_element.next_element)
+		home_adv_soup = BeautifulSoup(soup.find('div',attrs={"id":"all_advanced"}).find("div", attrs={"class":"placeholder"}).next_element.next_element)
 		home_adv_table = home_adv_soup.find("table", attrs={"id":"%s_adv"%home_team})
 		home_adv_headers = [[element.get_text().strip() for element in row.find_all("th")] for row in home_adv_table.find("thead").find_all("tr")][0]
-		home_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
-		home_adv_players = [row.find('a')['href'] for row in home_adv_table.find("tbody").find_all("tr",attrs={"class":"All-ALL"})]
+		home_adv_stats = [[element.get_text().strip() for element in row.find_all("td")] for row in home_adv_table.find("tbody").find_all("tr",attrs={"class":"ALLAll"})]
+		home_adv_players = [row.find('a')['href'] for row in home_adv_table.find("tbody").find_all("tr",attrs={"class":"ALLAll"})]	
 		break
 	except AttributeError:
 		print count
@@ -204,7 +210,7 @@ for (player,stats) in zip(home_adv_players,home_adv_stats):
 			dictionary['teams'][home_team]['players'][player][str("-".join(header.split(u'\u2011')))] = float(stats[i-1])
 
 ###
-away_record_after = [int(i) for i in str(away_record_after.strip('(').strip(')')).split('-')]
+away_record_after = [int(i) for i in str(records_after[0].strip('(').strip(')')).split('-')]
 if away_dec == 'W':
 	away_record_after[0] -= 1
 elif away_dec == 'L':
@@ -214,7 +220,7 @@ elif away_dec == 'O':
 dictionary['teams'][away_team]['record before']	= away_record_after
 dictionary['teams'][away_team]['result'] = away_dec
 
-home_record_after = [int(i) for i in str(home_record_after.strip('(').strip(')')).split('-')]
+home_record_after = [int(i) for i in str(records_after[1].strip('(').strip(')')).split('-')]
 if home_dec == 'W':
 	home_record_after[0] -= 1
 elif home_dec == 'L':
