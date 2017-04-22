@@ -281,7 +281,7 @@ while count < 10:
 			for row in home_nhl_rows:
 				home_nhl_headers += [[element.get_text().strip() for element in home_table.find("thead").find("tr").find_all("th")]]
 				home_nhl_stats += [[datum.get_text().strip() for datum in row.find_all('td')]]
-				home_nhl_players += [" ".join(row.find('a')['href'].split('/player/')[-1].split('-')[0:-1]).title()]
+				home_nhl_players += [" ".join(row.find('a')['href'].split('/player/')[-1].split('-')[0:-1]).title()]		
 		driver.quit()
 		break
 	except AttributeError:
@@ -307,23 +307,32 @@ for i,header in enumerate(nhl_team_headers):
 		
 ###
 for player,headers,stats in zip(away_nhl_players,away_nhl_headers,away_nhl_stats):
+	
 	for player_link in dictionary['teams'][away_team]['players']:
 		if dictionary['teams'][away_team]['players'][player_link]['Player'].lower() == player.lower():
-			for i,header in enumerate(headers):
+			for i,header in enumerate(headers):				
+				
 				if i == 1:
 					dictionary['teams'][away_team]['players'][player_link]['Position'] = str(header)
+				
 				elif dictionary['teams'][away_team]['players'][player_link].has_key(str(header)):
 					pass
+								
 				elif str(header) == 'TOI' or str(header) == 'PP TOI' or str(header) == 'SH TOI':
-					dictionary['teams'][away_team]['players'][player_link][str(header)] = 60. * float(str(stats[i]).split(':')[0]) + float(str(stats[i]).split(':')[1])
-				elif stats[i]== u'\u2013':
+					try:
+						dictionary['teams'][away_team]['players'][player_link][str(header)] = 60. * float(str(stats[i]).split(':')[0]) + float(str(stats[i]).split(':')[1])
+					except ValueError:
+						dictionary['teams'][away_team]['players'][player_link][str(header)] = 0.
+				
+				elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH' or str(header) == 'SAVE-SHOTS':
+					dictionary['teams'][away_team]['players'][player_link]['SV ' + str(header)] = [float(j) for j in stats[i].split(u'\u2013')]
+				
+				elif not str(stats[i]) or str(stats[i]) == '--':
 					dictionary['teams'][away_team]['players'][player_link][str(header)] = np.nan
-				elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH':
-					dictionary['teams'][away_team]['players'][player_link]['SV ' + str(header)] = [float(j) for j in str(stats[i]).split('-')]
-				elif str(header) == 'SAVE-SHOTS':
-					pass
+				
 				elif str(header) == 'FO%':
 					dictionary['teams'][away_team]['players'][player_link][str(header)] = float(stats[i])/100.
+				
 				else:
 					dictionary['teams'][away_team]['players'][player_link][str(header)] = float(stats[i])
 			break
@@ -333,20 +342,28 @@ for player,headers,stats in zip(home_nhl_players,home_nhl_headers,home_nhl_stats
 	for player_link in dictionary['teams'][home_team]['players']:
 		if dictionary['teams'][home_team]['players'][player_link]['Player'].lower() == player.lower():
 			for i,header in enumerate(headers):
+				
 				if i == 1:
 					dictionary['teams'][home_team]['players'][player_link]['Position'] = str(header)
+				
 				elif dictionary['teams'][home_team]['players'][player_link].has_key(str(header)):
 					pass
+												
 				elif str(header) == 'TOI' or str(header) == 'PP TOI' or str(header) == 'SH TOI':
-					dictionary['teams'][home_team]['players'][player_link][str(header)] = 60. * float(str(stats[i]).split(':')[0]) + float(str(stats[i]).split(':')[1])
-				elif stats[i]== u'\u2013':
+					try:
+						dictionary['teams'][home_team]['players'][player_link][str(header)] = 60. * float(str(stats[i]).split(':')[0]) + float(str(stats[i]).split(':')[1])
+					except ValueError:
+						dictionary['teams'][home_team]['players'][player_link][str(header)] = 0.
+				
+				elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH' or str(header) == 'SAVE-SHOTS':
+					dictionary['teams'][home_team]['players'][player_link]['SV ' + str(header)] = [float(j) for j in stats[i].split(u'\u2013')]
+				
+				elif not str(stats[i]) or str(stats[i]) == '--':
 					dictionary['teams'][home_team]['players'][player_link][str(header)] = np.nan
-				elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH':
-					dictionary['teams'][home_team]['players'][player_link]['SV ' + str(header)] = [float(j) for j in str(stats[i]).split('-')]
-				elif str(header) == 'SAVE-SHOTS':
-					pass
+				
 				elif str(header) == 'FO%':
 					dictionary['teams'][home_team]['players'][player_link][str(header)] = float(stats[i])/100.
+				
 				else:
 					dictionary['teams'][home_team]['players'][player_link][str(header)] = float(stats[i])
 			break
