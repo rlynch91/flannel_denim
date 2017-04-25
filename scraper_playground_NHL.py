@@ -12,8 +12,8 @@ import time
 
 year = '2016'
 month = '03'
-day = '20'
-away_team = 'MIN'
+day = '22' #'20'
+away_team = 'DAL' #'MIN'
 home_team = 'CHI'
 home_team_long = 'blackhawks'
 home_team_city = "Chicago"
@@ -122,10 +122,10 @@ for (player,stats) in zip(away_skaters_players,away_skaters_stats):
 			dictionary['teams'][away_team]['players'][player][str(header)] = 60. * float(str(stats[i-1]).split(':')[0]) + float(str(stats[i-1]).split(':')[1])
 		elif not str(stats[i-1]):
 			dictionary['teams'][away_team]['players'][player][str(header)] = np.nan
-		elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH':
-			if i >= 6 and i <=8:
+		elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH' or str(header) == 'GW':
+			if i >= 7 and i <= 10:
 				dictionary['teams'][away_team]['players'][player]['G'+str(header)] = float(stats[i-1])
-			elif i >= 10 and i <= 12:
+			elif i >= 11 and i <= 13:
 				dictionary['teams'][away_team]['players'][player]['A'+str(header)] = float(stats[i-1])
 		else:
 			dictionary['teams'][away_team]['players'][player][str(header)] = float(stats[i-1])
@@ -172,10 +172,10 @@ for (player,stats) in zip(home_skaters_players,home_skaters_stats):
 			dictionary['teams'][home_team]['players'][player][str(header)] = 60. * float(str(stats[i-1]).split(':')[0]) + float(str(stats[i-1]).split(':')[1])
 		elif not str(stats[i-1]):
 			dictionary['teams'][home_team]['players'][player][str(header)] = np.nan
-		elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH':
-			if i >= 6 and i <=8:
+		elif str(header) == 'EV' or str(header) == 'PP' or str(header) == 'SH' or str(header) == 'GW':
+			if i >= 7 and i <=10:
 				dictionary['teams'][home_team]['players'][player]['G'+str(header)] = float(stats[i-1])
-			elif i >= 10 and i <= 12:
+			elif i >= 11 and i <= 13:
 				dictionary['teams'][home_team]['players'][player]['A'+str(header)] = float(stats[i-1])		
 		else:
 			dictionary['teams'][home_team]['players'][player][str(header)] = float(stats[i-1])
@@ -438,6 +438,8 @@ dictionary['O/U']['O money line'] = float(total_line_over)
 dictionary['O/U']['U money line'] = float(total_line_under)
 
 #-----------------------------------------------------------------------
+
+pickle.dump(dictionary,open('test.pkl','wt'))
 
 #test on blackhawks home and away to make sure home and away are the same
 #test on muliple goalie games

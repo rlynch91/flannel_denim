@@ -29,7 +29,9 @@ def date_to_day_number(season_year, date_year, date_month, date_day):
 
 #Initialize variables
 
-year = '2016'
+year = '2015' #Starting year of season
+team_names = pickle.load(open('NHL_teams_names.pkl'))
+dictionary = {}
 
 #-----------------------------------------------------------------------
 
@@ -37,7 +39,7 @@ year = '2016'
 count = 0
 while count < 10:
 	try:
-		page = requests.get("http://www.hockey-reference.com/leagues/NHL_%s_games.html"%(year))
+		page = requests.get("http://www.hockey-reference.com/leagues/NHL_%s_games.html"%(int(year)+1))
 		soup = BeautifulSoup(page.text)
 
 		schedule_table = soup.find("table", attrs={"id":"games"})
@@ -51,4 +53,12 @@ while count < 10:
 
 #-----------------------------------------------------------------------
 
-print schedule_dates
+tmp = zip(schedule_dates, schedule_away_teams, schedule_home_teams)
+for n,(i,j,k) in enumerate(tmp):
+	if not date_to_day_number(year,i[0],i[1],i[2]) in dictionary.keys():
+		dictionary[date_to_day_number(year,i[0],i[1],i[2])] = {}
+	dictionary[date_to_day_number(year,i[0],i[1],i[2])][n] = np.nan #scraper_playground_NHL(i[0],i[1],i[2],j,k,team_names[k]['team long'],team_names[k]['team city'])
+	print date_to_day_number(year,i[0],i[1],i[2]),i,j,k,team_names[k]['team'],team_names[k]['team long'],team_names[k]['team city'],n
+	time.sleep(10)
+
+print dictionary

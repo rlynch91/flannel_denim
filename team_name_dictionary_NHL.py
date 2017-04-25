@@ -185,3 +185,7 @@ dictionary['WPG'] = {}
 dictionary['WPG']['team'] = 'WPG'
 dictionary['WPG']['team long'] = 'jets'
 dictionary['WPG']['team city'] = 'Winnipeg'
+
+#-----------------------------------------------------------------------
+
+pickle.dump(dictionary,open('NHL_teams_names.pkl','wt'))
