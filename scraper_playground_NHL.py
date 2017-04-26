@@ -96,6 +96,8 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			if i ==0:
 				continue
 			elif str(header) == 'Player':
+				if u'\xe4' in stats[i-1]:
+					stats[i-1] = 'a'.join(stats[i-1].split(u'\xe4'))
 				dictionary['teams'][away_team]['players'][player][str(header)] = str(stats[i-1]).strip()
 			elif str(header) == 'TOI':
 				dictionary['teams'][away_team]['players'][player][str(header)] = 60. * float(str(stats[i-1]).split(':')[0]) + float(str(stats[i-1]).split(':')[1])
@@ -115,6 +117,8 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			if i ==0:
 				continue
 			elif str(header) == 'Player':
+				if u'\xe4' in stats[i-1]:
+					stats[i-1] = 'a'.join(stats[i-1].split(u'\xe4'))
 				dictionary['teams'][away_team]['players'][player][str(header)] = str(stats[i-1]).strip()
 			elif str(header) == 'DEC':
 				if str(stats[i-1]):
@@ -146,6 +150,8 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			if i ==0:
 				continue
 			elif str(header) == 'Player':
+				if u'\xe4' in stats[i-1]:
+					stats[i-1] = 'a'.join(stats[i-1].split(u'\xe4'))
 				dictionary['teams'][home_team]['players'][player][str(header)] = str(stats[i-1]).strip()
 			elif str(header) == 'TOI':
 				dictionary['teams'][home_team]['players'][player][str(header)] = 60. * float(str(stats[i-1]).split(':')[0]) + float(str(stats[i-1]).split(':')[1])
@@ -165,6 +171,8 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			if i ==0:
 				continue
 			elif str(header) == 'Player':
+				if u'\xe4' in stats[i-1]:
+					stats[i-1] = 'a'.join(stats[i-1].split(u'\xe4'))
 				dictionary['teams'][home_team]['players'][player][str(header)] = str(stats[i-1]).strip()
 			elif str(header) == 'DEC':
 				if str(stats[i-1]):
@@ -264,6 +272,9 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			driver.quit()
 			break
 		except AttributeError:
+			if nhl_game_num == '#':
+				#No NHL.com data for this game
+				return np.nan
 			driver.quit()
 			print count
 			count += 1
@@ -359,10 +370,15 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			soup = BeautifulSoup(driver.page_source)
 
 			team_name_soup = soup.find_all("span",attrs={"class":"team-name"})
+			game_number = None
 			for team in team_name_soup:
 				if team.get_text() == home_team_city:
 					game_number = team.find("a")['href'].split('-')[-1].strip('/')
 					break
+
+			if not game_number:
+				#Could not find SBR data for this game
+				return np.nan
 
 			moneylines = []
 			team_lines = soup.find_all("div", attrs={"class":"eventLine-book-value"})
@@ -408,13 +424,17 @@ def executable(year, month, day, away_team, home_team, home_team_long, home_team
 			count += 1
 
 	#Update dictionary
-	dictionary['teams'][away_team]['team money line'] = float(away_moneyline)
-	dictionary['teams'][home_team]['team money line'] = float(home_moneyline)
+	try:
+		dictionary['teams'][away_team]['team money line'] = float(away_moneyline)
+		dictionary['teams'][home_team]['team money line'] = float(home_moneyline)
 
-	dictionary['O/U'] = {}
-	dictionary['O/U']['O/U line'] = float(total_number)
-	dictionary['O/U']['O money line'] = float(total_line_over)
-	dictionary['O/U']['U money line'] = float(total_line_under)
+		dictionary['O/U'] = {}
+		dictionary['O/U']['O/U line'] = float(total_number)
+		dictionary['O/U']['O money line'] = float(total_line_over)
+		dictionary['O/U']['U money line'] = float(total_line_under)
+	except ValueError:
+		#Could not find SBR data for this game
+		return np.nan
 
 	#-----------------------------------------------------------------------
 

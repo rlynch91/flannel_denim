@@ -58,6 +58,9 @@ while count < 10:
 games_info = zip(schedule_dates, schedule_away_teams, schedule_home_teams)
 for game_num,(game_date,game_away,game_home) in enumerate(games_info):
 	
+	if game_num < 628:
+		continue
+	
 	print game_num, game_date, game_away, game_home
 	
 	#Convert date to day number
