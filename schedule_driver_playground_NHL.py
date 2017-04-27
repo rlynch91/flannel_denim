@@ -57,19 +57,19 @@ while count < 10:
 #Loop through schedule, scraping each game
 games_info = zip(schedule_dates, schedule_away_teams, schedule_home_teams)
 for game_num,(game_date,game_away,game_home) in enumerate(games_info):
+	try:	
+		print game_num, game_date, game_away, game_home
+		
+		#Convert date to day number
+		day_num = date_to_day_number(year,game_date[0],game_date[1],game_date[2])
+		
+		#Scrape data for this game
+		if not day_num in dictionary.keys():
+			dictionary[day_num] = {}
+		dictionary[day_num][game_num] = scraper_playground_NHL.executable(game_date[0],game_date[1],game_date[2],game_away,game_home,team_names[game_home]['team long'],team_names[game_home]['team city'])
 	
-	if game_num < 628:
-		continue
-	
-	print game_num, game_date, game_away, game_home
-	
-	#Convert date to day number
-	day_num = date_to_day_number(year,game_date[0],game_date[1],game_date[2])
-	
-	#Scrape data for this game
-	if not day_num in dictionary.keys():
-		dictionary[day_num] = {}
-	dictionary[day_num][game_num] = scraper_playground_NHL.executable(game_date[0],game_date[1],game_date[2],game_away,game_home,team_names[game_home]['team long'],team_names[game_home]['team city'])
+	except Exception as e:
+		dictionary[day_num][game_num] = np.nan
 			
 #Save dictionary
 pickle.dump(dictionary,open('data/scraped_%s_%s.pkl'%(int(year),int(year)+1),'wt'))
